@@ -148,18 +148,19 @@ def main():
 
     ## Filtro Tx y Rx
     #Filtro Root Raised Cosine
-    (t,rc)=rrcosine(beta, T, os, Nbauds)
+    (t,rc)=rcosine(beta, T, os, Nbauds,0)
     #Normalizacion
     rc=rc[:24]
     rc=rc/np.linalg.norm(rc) #lialg.norm ----> Raiz de la suma de los cuadrados de los coeficientes
     
     # ### FIR para Canal
     # #Filtro Root Raised Cosine 
-    (t,rch)=rcosine(beta, T_ch, os_ch, Nbauds_ch,0)
+    #(t,rch)=rcosine(beta, T_ch, os_ch, Nbauds_ch,0)
     # # #Normalizacion fir del canal
-    rch=rch[:28]
-    rch=rch/np.linalg.norm(rch) #lialg.norm ----> Raiz de la suma de los cuadrados de los coeficientes
-
+    #rch=rch[:28]
+    rch = [0.25,0,0,0,1]
+    #rch=rch/np.linalg.norm(rch) #lialg.norm ----> Raiz de la suma de los cuadrados de los coeficientes
+    
     canal=np.convolve(rc,rch)  ## filtro equivalente, resultado de la convolucion de filtro Tx y FIR canal
     # rch=np.zeros(28)
     # rch[13]=1
@@ -185,7 +186,6 @@ def main():
     print "Energia canal: ", energia_fir_equiv
 
     ###---------------------------------------------------
-
     #Grafica de respuesta al impulso del filtro
     # graf_respImpulso(rc,"Filtro Transmisor")
 
@@ -279,8 +279,8 @@ def main():
     graficar=0 #Cuando esta en 1 almacena valores para luego graficar
 
     # #Memoria del canal
-    mem_canal_I=np.zeros(len(rch))
-    mem_canal_Q=np.zeros(len(rch))
+    mem_canal_I=np.zeros(len(canal))
+    mem_canal_Q=np.zeros(len(canal))
 
     #Maximos y minimos
     max_rx = np.zeros(10)
@@ -304,7 +304,7 @@ def main():
     #CURVA BER SIMULADA
     snr=[100.,100.,16.,14.,12.,10.,8.,6.,4.,2.]
     ber=[]
-    snr_iteraciones=[2097153,100000,100000,100000,100000,100000,100000,100000,100000,100000]
+    snr_iteraciones=[2097153,1000000,1000000,1000000,1000000,1000000,1000000,1000000,1000000,1000000]
     for t in range(len(snr_iteraciones)):
         error_final=0
         noise_vector_I=noise(snr[t],snr_iteraciones[t],energia_fir_equiv) #genero senial de ruido
@@ -366,8 +366,8 @@ def main():
             mem_canal_I[0]=out_tx_I #agregamos nuevo valor de salida de Tx a la memoria
             mem_canal_Q[0]=out_tx_Q
 
-            out_ch_I=np.sum(mem_canal_I*(rch*np.sqrt(np.sqrt(os)/np.sqrt(2)))) #salida Tx pasa por canal
-            out_ch_Q=np.sum(mem_canal_Q*(rch*np.sqrt(np.sqrt(os)/np.sqrt(2))))
+            out_ch_I=np.sum(mem_canal_I*(canal*np.sqrt(np.sqrt(os)/np.sqrt(2)))) #salida Tx pasa por canal
+            out_ch_Q=np.sum(mem_canal_Q*(canal*np.sqrt(np.sqrt(os)/np.sqrt(2))))
     
 
             shift_rx_I = ShiftReg(shift_rx_I)
@@ -511,6 +511,7 @@ def main():
     
 
     print "Vector de Maximos", max_rx
+    print "BER: ", ber
 
     #print error_minimo
     #print pos_aux
