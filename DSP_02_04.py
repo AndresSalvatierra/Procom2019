@@ -153,19 +153,20 @@ def main():
     rc=rc[:24]
     rc=rc/np.linalg.norm(rc) #lialg.norm ----> Raiz de la suma de los cuadrados de los coeficientes
     
-    # ### FIR para Canal
+    # # ### FIR para Canal
     # #Filtro Root Raised Cosine 
-    # (t,rch)=rrcosine(beta, T_ch, os_ch, Nbauds_ch)
+    # (t,rch)=rcosine(beta, T_ch, os_ch, Nbauds_ch,1)
     # # #Normalizacion fir del canal
     # rch=rch[:28]
     # rch=rch/np.linalg.norm(rch) #lialg.norm ----> Raiz de la suma de los cuadrados de los coeficientes
-    #----------------FIR------------------#
-    rch = np.zeros(28);
-    rch[13]=0.25 #Poner 0.1
-    rch[14]=1
-    rch=rch/np.linalg.norm(rch)
+
+    # #----------------FIR------------------#
+    # rch = np.zeros(28);
+    # rch[13]=0.25 #Poner 0.1
+    # rch[14]=1
+    # rch=rch/np.linalg.norm(rch)
     
-    canal=np.convolve(rc,rch)  ## filtro equivalente, resultado de la convolucion de filtro Tx y FIR canal
+    # canal=np.convolve(rc,rch)  ## filtro equivalente, resultado de la convolucion de filtro Tx y FIR canal
     
     ###---------------------------------------------------
     ####Calculos de energia de filtros
@@ -183,24 +184,24 @@ def main():
 
     ##Filtro equivalente de Tx y FIR canal
     energia_fir_equiv=0
-    for w in range(len(rch)):
-        energia_fir_equiv=energia_fir_equiv+(rch[w]**2)
+    for w in range(len(rc)):
+        energia_fir_equiv=energia_fir_equiv+(rc[w]**2)
 
-    print "Energia FIR: ", energia_fir_equiv
+    print "Energia Tx: ", energia_fir_equiv
 
     ###---------------------------------------------------
 
     # #Grafica de respuesta al impulso del filtro
     graf_respImpulso(rc,"Filtro Transmisor")
-    graf_respImpulso(rch,"Canal")
+    #graf_respImpulso(rch,"Canal")
 
     # #Respuesta en frecuencia
     [H0,A0,F0]=resp_freq(rc, Ts, Nfreqs)
-    [H1,A1,F1]=resp_freq(rch, Ts_ch, Nfreqs)
+    #[H1,A1,F1]=resp_freq(rch, Ts_ch, Nfreqs)
 
     # #Grafica de respuesta en frecuencia del filtro
     graf_respFrecuencia(H0,A0,F0,T,Ts,"Filtro Transmisor")
-    graf_respFrecuencia(H1,A1,F1,T_ch,Ts_ch,"FIR Canal")
+    #graf_respFrecuencia(H1,A1,F1,T_ch,Ts_ch,"FIR Canal")
 
     # rcoseno=np.convolve(rc,rc)
 
@@ -285,9 +286,9 @@ def main():
 
     graficar=0 #Cuando esta en 1 almacena valores para luego graficar
 
-    # #Memoria del canal
-    mem_canal_I=np.zeros(len(rch))
-    mem_canal_Q=np.zeros(len(rch))   
+    # # #Memoria del canal
+    # mem_canal_I=np.zeros(len(rch))
+    # mem_canal_Q=np.zeros(len(rch))   
 
 
     # # Maximos y minimos
@@ -295,7 +296,7 @@ def main():
     # max_tx_noise = np.zeros(10)
     # max_rx = np.zeros(10)
     # # Ponderacion 
-    # vect_pond = [1.,1.,0.4837,0.43860,0.36607,0.33748,0.28741,0.24211,0.21732,0.17507]
+    vect_pond = [1.,1.,0.4837,0.43860,0.36607,0.33748,0.28741,0.24211,0.21732,0.17507]
 
     #Usados para graficar
     senial_transmitir_I=[]
@@ -312,12 +313,12 @@ def main():
     error_tiempo=[] 
 
     #CURVA BER SIMULADA
-    # snr=[100.,100.,16.,14.,12.,10.,8.,6.,4.,2.]
-    snr = [100.,100.]
+    snr=[100.,100.,16.,14.,12.,10.,8.,6.,4.,2.]
+    # snr = [100.,100.]
     ber=[]
     #2097153,1000000
-    # snr_iteraciones=[297153,100000,100000,100000,100000,100000,100000,100000,100000,100000]
-    snr_iteraciones=[2097153,1000000]
+    snr_iteraciones=[2097153,100000,100000,100000,100000,100000,100000,100000,100000,100000]
+    # snr_iteraciones=[2097153,1000000]
     for t in range(len(snr_iteraciones)):
         error_final=0
         noise_vector_I=noise(snr[t],snr_iteraciones[t],energia_fir_equiv) #genero senial de ruido
@@ -374,18 +375,19 @@ def main():
             # if(max_tx_noise[t] < abs(out_tx_I)):
             #     max_tx_noise[t] = abs(out_tx_I)
   
-
-            # ###
-            # Canal
-            # ###
-            mem_canal_I = ShiftReg(mem_canal_I) #corrimiento de memoria del canal
-            mem_canal_Q = ShiftReg(mem_canal_Q)
+            out_ch_I = out_tx_I
+            out_ch_Q = out_tx_Q
+            # # ###
+            # # Canal
+            # # ###
+            # mem_canal_I = ShiftReg(mem_canal_I) #corrimiento de memoria del canal
+            # mem_canal_Q = ShiftReg(mem_canal_Q)
             
-            mem_canal_I[0]=out_tx_I #agregamos nuevo valor de salida de Tx a la memoria
-            mem_canal_Q[0]=out_tx_Q
+            # mem_canal_I[0]=out_tx_I #agregamos nuevo valor de salida de Tx a la memoria
+            # mem_canal_Q[0]=out_tx_Q
 
-            out_ch_I=np.sum(mem_canal_I*(rch*np.sqrt(np.sqrt(os)/np.sqrt(2)))) #salida Tx pasa por canal
-            out_ch_Q=np.sum(mem_canal_Q*(rch*np.sqrt(np.sqrt(os)/np.sqrt(2))))
+            # out_ch_I=np.sum(mem_canal_I*(rch*np.sqrt(np.sqrt(os)/np.sqrt(2)))) #salida Tx pasa por canal
+            # out_ch_Q=np.sum(mem_canal_Q*(rch*np.sqrt(np.sqrt(os)/np.sqrt(2))))
     
 
             shift_rx_I = ShiftReg(shift_rx_I)
@@ -399,8 +401,8 @@ def main():
             rx_I=np.sum((rc*np.sqrt(np.sqrt(os)/np.sqrt(2)))*shift_rx_I)
             rx_Q=np.sum((rc*np.sqrt(np.sqrt(os)/np.sqrt(2)))*shift_rx_Q)
             
-            rx_I = rx_I
-            rx_Q = rx_Q
+            rx_I=rx_I*vect_pond[t]
+            rx_Q=rx_Q*vect_pond[t]
             # if(max_rx[t] < abs(rx_I)):
             #     max_rx[t] = abs(rx_I)
 
@@ -447,6 +449,7 @@ def main():
 
                 # if(graficar==1):
                 coeficientes.append(coef_fir_adap_I.copy())
+                
                 #     error_tiempo.append(error_adap_I)
 
                 for b in range(0,Ntap):
@@ -459,12 +462,6 @@ def main():
             # phase_I=ShiftReg(phase_I)
             # phase_Q=ShiftReg(phase_Q)
 
-            # #Slicer
-            # ak_I=(2*(rx_I>=0)-1)
-            # ak_Q=(2*(rx_Q>=0)-1)
-
-            # phase_I[0]=ak_I
-            # phase_Q[0]=ak_Q
             ##Ber
             if((value==0) and i!=0):
                 recib_berI = ShiftReg(recib_berI)
@@ -564,9 +561,9 @@ def main():
     # plt.title("Error en la adaptacion")
     # plt.plot(error_tiempo)
 
-    filtro_rx = (rc*np.sqrt(np.sqrt(os)/np.sqrt(2)))
-    rx_canal = np.convolve(canal,filtro_rx)
-
+    # filtro_rx = (rc*np.sqrt(np.sqrt(os)/np.sqrt(2)))
+    # rx_canal = np.convolve(canal,filtro_rx)
+    
     plt.figure()
     plt.title("Coeficientes en el tiempo")
     plt.plot(coeficientes)
@@ -576,15 +573,15 @@ def main():
     plt.title("Ultimos coeficientes del filtro FIR")
     plt.stem(coeficientes[len(coeficientes)-1])
     
-    equa=np.convolve(rx_canal,np.transpose(coeficientes[len(coeficientes)-1]))
+    # equa=np.convolve(rx_canal,np.transpose(coeficientes[len(coeficientes)-1]))
     
-    ## Grafica de respuesta al impulso del filtro
-    graf_respImpulso(equa,"a la salida del equalizador")
+    # ## Grafica de respuesta al impulso del filtro
+    # graf_respImpulso(equa,"a la salida del equalizador")
     
-    ## Respuesta en frecuencia
-    [H2,A2,F2]=resp_freq(equa, Ts, Nfreqs)
-    ## Grafica de respuesta en frecuencia del filtro
-    graf_respFrecuencia(H2,A2,F2,T_ch,Ts_ch,"a la salida del ecualizador")
+    # ## Respuesta en frecuencia
+    # [H2,A2,F2]=resp_freq(equa, Ts, Nfreqs)
+    # ## Grafica de respuesta en frecuencia del filtro
+    # graf_respFrecuencia(H2,A2,F2,T_ch,Ts_ch,"a la salida del ecualizador")
 
     plt.show(block=False)
     raw_input('Press Enter to Continue')

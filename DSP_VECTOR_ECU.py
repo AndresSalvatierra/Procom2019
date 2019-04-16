@@ -160,6 +160,8 @@ def main():
 
     delta=0.0115
 
+    coeficientes = []
+
 
     #Cantidad de coeficientes FIR del ecualizador
     Ntap=31
@@ -229,6 +231,8 @@ def main():
  #-----------------------------------------------Algoritmo de adaptacion
                 error_adap_I=ak_I-y_I
                 error_adap_Q=ak_Q-y_Q
+
+                coeficientes.append(coef_fir_adap_I.copy());
                 
                 for b in range(0,Ntap):
                     coef_fir_adap_I[b]=coef_fir_adap_I[b] + delta*error_adap_I*mem_fir_adap_I[b]
@@ -358,7 +362,10 @@ def main():
     # plt.title("FASE 3")
     # plt.plot(fase3_I)
     # plt.plot(fase3_Q)
-    
+    plt.figure()
+    plt.title("Coeficientes en el tiempo")
+    plt.plot(coeficientes)
+
     plt.show(block=False)
     raw_input('Press Enter to Continue')
     plt.close()
