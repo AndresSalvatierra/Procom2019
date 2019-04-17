@@ -6,6 +6,9 @@ from scipy.special import erfc
 import matplotlib.pyplot as plt
 
 
+#Vector de Maximos [  3.85352189   3.85346703   6.47774343   6.65218766   8.70988952   9.55926411  10.77115487  11.99735333  15.64254762  18.61400039]
+
+
 #----------------------------FUNCIONES---------------------------#
 
 # ####
@@ -161,13 +164,11 @@ def main():
     # rch=rch/np.linalg.norm(rch)
     fact = [0.25,0,0,0,1]
     rch = np.convolve(rch,fact)
-    print "rch", rch
+    # print "rch", rch
     rch=rch/np.linalg.norm(rch) #lialg.norm ----> Raiz de la suma de los cuadrados de los coeficientes
-    #rch= rch*(np.sqrt(np.sqrt(os)/np.sqrt(2))
+
     canal=np.convolve(rc,rch)  ## filtro equivalente, resultado de la convolucion de filtro Tx y FIR canal
 
-    # rch=np.zeros(28)
-    # rch[13]=1
     ###---------------------------------------------------
     ####Calculos de energia de filtros
     #Tx
@@ -187,7 +188,7 @@ def main():
     for w in range(len(canal)):
         energia_fir_equiv=energia_fir_equiv+(canal[w]**2)
 
-    print "Energia canal: ", energia_fir_equiv
+    print "Energia canal equivalente: ", energia_fir_equiv
 
     ###---------------------------------------------------
     #Grafica de respuesta al impulso del filtro
@@ -289,8 +290,8 @@ def main():
     #Maximos y minimos
     max_rx = np.zeros(10)
     #Ponderacion 
-    # vect_pond = [0.78,0.78,0.483,0.474,0.403,0.353,0.3063,0.2688,0.24,0.19]
-    pond = 0.26
+    vect_pond = [0.259,0.259,0.154,0.1503,0.1148,0.1046,0.0928,0.0833,0.0639,0.0537]
+
     #Usados para graficar
     senial_transmitir_I=[]
     senial_transmitir_Q=[]
@@ -306,13 +307,13 @@ def main():
     error_tiempo=[] 
 
     #CURVA BER SIMULADA
-    # snr=[100.,100.,16.,14.,12.,10.,8.,6.,4.,2.]
+    snr=[100.,100.,16.,14.,12.,10.,8.,6.,4.,2.]
     ber=[]
-    snr_iteraciones=[2097153,2000000]
+    snr_iteraciones=[2097153,100000,100000,100000,100000,100000,100000,100000,100000,100000]
     for t in range(len(snr_iteraciones)):
         error_final=0
-        # noise_vector_I=noise(snr[t],snr_iteraciones[t],energia_fir_equiv) #genero senial de ruido
-        # noise_vector_Q=noise(snr[t],snr_iteraciones[t],energia_fir_equiv)
+        noise_vector_I=noise(snr[t],snr_iteraciones[t],energia_fir_equiv) #genero senial de ruido
+        noise_vector_Q=noise(snr[t],snr_iteraciones[t],energia_fir_equiv)
         print "snr_iter: ",snr_iteraciones[t]
         print "t: ",t
 
@@ -356,8 +357,8 @@ def main():
             out_tx_I=np.sum((rc*np.sqrt(np.sqrt(os)/np.sqrt(2)))*shift_tx_I)
             out_tx_Q=np.sum((rc*np.sqrt(np.sqrt(os)/np.sqrt(2)))*shift_tx_Q)
 
-            # out_tx_I=out_tx_I+noise_vector_I[i]
-            # out_tx_Q=out_tx_Q+noise_vector_Q[i]
+            out_tx_I=out_tx_I+noise_vector_I[i]
+            out_tx_Q=out_tx_Q+noise_vector_Q[i]
 
 
 
@@ -370,8 +371,8 @@ def main():
             mem_canal_I[0]=out_tx_I #agregamos nuevo valor de salida de Tx a la memoria
             mem_canal_Q[0]=out_tx_Q
 
-            out_ch_I=np.sum(mem_canal_I*(rch))#*np.sqrt(np.sqrt(os)/np.sqrt(2)))) #salida Tx pasa por canal
-            out_ch_Q=np.sum(mem_canal_Q*(rch))#*np.sqrt(np.sqrt(os)/np.sqrt(2))))
+            out_ch_I=np.sum(mem_canal_I*(rch)) #salida Tx pasa por canal
+            out_ch_Q=np.sum(mem_canal_Q*(rch))
     
 
             shift_rx_I = ShiftReg(shift_rx_I)
@@ -385,12 +386,14 @@ def main():
             rx_I=np.sum((rc*np.sqrt(np.sqrt(os)/np.sqrt(2)))*shift_rx_I)
             rx_Q=np.sum((rc*np.sqrt(np.sqrt(os)/np.sqrt(2)))*shift_rx_Q)
             
-            rx_I = rx_I *pond
-            rx_Q = rx_Q *pond
+            rx_I = rx_I *vect_pond[t]
+            rx_Q = rx_Q *vect_pond[t]
 
+            # rx_I=rx_I*pond
+            # rx_Q=rx_Q*pond
 
-            if(max_rx[t] < abs(rx_I)):
-                max_rx[t] = abs(rx_I)
+            # if(max_rx[t] < abs(rx_I)):
+            #     max_rx[t] = abs(rx_I)
 
             # print "Salida Rx: ",rx_I
 
@@ -503,15 +506,16 @@ def main():
                         error_final=error_final+1
                     
                     if(i==(snr_iteraciones[t]-4)):
-                        #print "snr",snr[t]
+                        print "snr",snr[t]
                         print "error_final", error_final
                         ber.append(float(error_final)/(((snr_iteraciones[t]/os)*2)))
                         print ber
 
-        print " Maximo = ", max_rx[t]
+        # print "SNR = ", snr[t], " Maximo = ", max_rx[t]
+        # print "SNR = %d - Maximo = %d" %(snr[t],max_rx[t])
     
 
-    print "Vector de Maximos", max_rx
+    # print "Vector de Maximos", max_rx
     print "BER: ", ber
 
     #print error_minimo
