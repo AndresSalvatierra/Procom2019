@@ -162,8 +162,8 @@ def main():
     # # #Normalizacion fir del canal
     rch=rch[:28]
     # rch=rch/np.linalg.norm(rch)
-    fact = [0.25,0,0,0,1]
-    rch = np.convolve(rch,fact)
+    # fact = [0.25,0,0,0,1]
+    # rch = np.convolve(rch,fact)
     # print "rch", rch
     rch=rch/np.linalg.norm(rch) #lialg.norm ----> Raiz de la suma de los cuadrados de los coeficientes
 
@@ -309,7 +309,7 @@ def main():
     #CURVA BER SIMULADA
     snr=[100.,100.,16.,14.,12.,10.,8.,6.,4.,2.]
     ber=[]
-    snr_iteraciones=[2097153,100000,100000,100000,100000,100000,100000,100000,100000,100000]
+    snr_iteraciones=[1000000,2097153,1000000,1000000,1000000,1000000,1000000,1000000,1000000,1000000]
     for t in range(len(snr_iteraciones)):
         error_final=0
         noise_vector_I=noise(snr[t],snr_iteraciones[t],energia_fir_equiv) #genero senial de ruido
@@ -386,14 +386,15 @@ def main():
             rx_I=np.sum((rc*np.sqrt(np.sqrt(os)/np.sqrt(2)))*shift_rx_I)
             rx_Q=np.sum((rc*np.sqrt(np.sqrt(os)/np.sqrt(2)))*shift_rx_Q)
             
+
+            if(max_rx[t] < abs(rx_I)):
+                max_rx[t] = abs(rx_I)
+
             rx_I = rx_I *vect_pond[t]
             rx_Q = rx_Q *vect_pond[t]
 
             # rx_I=rx_I*pond
             # rx_Q=rx_Q*pond
-
-            # if(max_rx[t] < abs(rx_I)):
-            #     max_rx[t] = abs(rx_I)
 
             # print "Salida Rx: ",rx_I
 
@@ -458,64 +459,64 @@ def main():
 
             # phase_I[0]=ak_I
             # phase_Q[0]=ak_Q
-            ##Ber
-            if((value==0) and i!=0):
-                recib_berI = ShiftReg(recib_berI)
-                recib_berQ = ShiftReg(recib_berQ)
+            if(t>=1):
+                ##Ber
+                if((value==0) and i!=0):
+                    recib_berI = ShiftReg(recib_berI)
+                    recib_berQ = ShiftReg(recib_berQ)
 
-                recib_berI[0]=ak_I #Bits recibidos
-                recib_berQ[0]=ak_Q #Bits recibidos
+                    recib_berI[0]=ak_I #Bits recibidos
+                    recib_berQ[0]=ak_Q #Bits recibidos
 
-                if(end_sync==0): ##Etapa de sincronizacion
-                    if(cont_ber<511):
-                        cont_ber=cont_ber+1
-                    else: #cont_ber==511
-                        cont_ber=0
-                        if(error_actual<error_minimo):
-                            print "Error minimo actual: ",error_actual
-                            print "Pos error minimo actual: ",pos_trans
-                            error_minimo=error_actual
-                            error_actual=0
-                            pos_aux=pos_trans
-                        else:
-                            error_actual=0
+                    if(end_sync==0): ##Etapa de sincronizacion
+                        if(cont_ber<511):
+                            cont_ber=cont_ber+1
+                        else: #cont_ber==511
+                            cont_ber=0
+                            if(error_actual<error_minimo):
+                                print "Error minimo actual: ",error_actual
+                                print "Pos error minimo actual: ",pos_trans
+                                error_minimo=error_actual
+                                error_actual=0
+                                pos_aux=pos_trans
+                            else:
+                                error_actual=0
 
-                        if(pos_trans!=1023):
-                            pos_trans=pos_trans+1
-                        else:   #finalizo etapa de sincronizacion
-                            pos_trans=pos_aux
-                            end_sync=1
-                            # print "end_sync",end_sync
-                            #graficar=1
-                    if(recib_berI[0]!=trans_berI[pos_trans]):
-                        error_actual=error_actual+1
-                    if(recib_berQ[0]!=trans_berQ[pos_trans]):
-                        error_actual=error_actual+1
+                            if(pos_trans!=1023):
+                                pos_trans=pos_trans+1
+                            else:   #finalizo etapa de sincronizacion
+                                pos_trans=pos_aux
+                                end_sync=1
+                                # print "end_sync",end_sync
+                                #graficar=1
+                        if(recib_berI[0]!=trans_berI[pos_trans]):
+                            error_actual=error_actual+1
+                        if(recib_berQ[0]!=trans_berQ[pos_trans]):
+                            error_actual=error_actual+1
 
-                else: #end_sync==1 pos sincronizacion
-                    cant_muestras=cant_muestras+1
-                    # print "end_sync"
-                    # if(end_sync==1):
-                        # print "Bit recibido en BER: ", ak_I
-                        # raw_input('Press Enter to Continue')
-                        # plt.close()
+                    else: #end_sync==1 pos sincronizacion
+                        cant_muestras=cant_muestras+1
+                        # print "end_sync"
+                        # if(end_sync==1):
+                            # print "Bit recibido en BER: ", ak_I
+                            # raw_input('Press Enter to Continue')
+                            # plt.close()
 
-                    if(recib_berI[0]!=trans_berI[pos_trans]):
-                        error_final=error_final+1
-                    if(recib_berQ[0]!=trans_berQ[pos_trans]):
-                        error_final=error_final+1
-                    
-                    if(i==(snr_iteraciones[t]-4)):
-                        print "snr",snr[t]
-                        print "error_final", error_final
-                        ber.append(float(error_final)/(((snr_iteraciones[t]/os)*2)))
-                        print ber
+                        if(recib_berI[0]!=trans_berI[pos_trans]):
+                            error_final=error_final+1
+                        if(recib_berQ[0]!=trans_berQ[pos_trans]):
+                            error_final=error_final+1
+                        
+                        if(i==(snr_iteraciones[t]-4)):
+                            print "snr",snr[t]
+                            print "error_final", error_final
+                            ber.append(float(error_final)/(((snr_iteraciones[t]/os)*2)))
+                            print ber
 
-        # print "SNR = ", snr[t], " Maximo = ", max_rx[t]
-        # print "SNR = %d - Maximo = %d" %(snr[t],max_rx[t])
+
     
 
-    # print "Vector de Maximos", max_rx
+    print "Vector de Maximos", max_rx
     print "BER: ", ber
 
     #print error_minimo

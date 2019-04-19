@@ -12,7 +12,7 @@ def graf_BER(snr,ber):
    for i in range(len(SNR_db)):
       #theoryBER[i] = erfc(np.sqrt(10**(SNR_db[i]/10)))
       theoryBER[i] = erfc(np.sqrt(0.5*(10.0**(SNR_db[i]/10)))) - (1/4)*(erfc(np.sqrt(0.5*(10.0**(SNR_db[i]/10)))))**2
-      theoryBER[i] = theoryBER[i]/np.sqrt(4)
+      theoryBER[i] = theoryBER[i]
    plt.semilogy(snr,ber, 'x')  #Simulation
    plt.semilogy(SNR_db, theoryBER, '--')
    plt.ylim(10e-08)
@@ -30,7 +30,7 @@ snr=[16.,14.,12.,10.,8.,6.,4.,2.]
 
 #VALORES DE BER CON RUIDO
 #ber_fase_0 = [0.0, 6e-06, 0.000176, 0.002962, 0.006498, 0.024546, 0.059262, 0.10712] #Con 8,6,4,2 ponderados
-ber_fase_0 = [0.0, 0.0, 3.8e-05, 0.000918, 0.006426, 0.024458, 0.059066, 0.10811] #Con 16,12,14,10,8,6,4,2 ponderados
+ber_fase_0 = [6e-05, 0.0009465, 0.0066605, 0.024409, 0.059641, 0.10957, 0.165741, 0.223887] #Con 16,12,14,10,8,6,4,2 ponderados
 # ber_fase_0=[4e-06, 0.0001955, 0.001852, 0.008551, 0.024828, 0.054447, 0.0972895, 0.148002]
 # ber_fase_1=[0.250302,0.250575,0.2508235,0.2510045,0.2530255,0.2614175,0.278696,0.301809]
 # ber_fase_2=[ 0.0, 0.0, 3.25e-05, 0.000751, 0.00596, 0.0229845, 0.0564575, 0.103797]
