@@ -6,8 +6,6 @@ from scipy.special import erfc
 import matplotlib.pyplot as plt
 
 
-#Vector de Maximos [  3.85352189   3.85346703   6.47774343   6.65218766   8.70988952   9.55926411  10.77115487  11.99735333  15.64254762  18.61400039]
-
 
 #----------------------------FUNCIONES---------------------------#
 
@@ -155,6 +153,7 @@ def main():
     #Normalizacion
     rc=rc[:24]
     rc=rc/np.linalg.norm(rc) #lialg.norm ----> Raiz de la suma de los cuadrados de los coeficientes
+    rc=rc*np.sqrt(float(os))
     
     # ### FIR para Canal
     # #Filtro Root Raised Cosine 
@@ -162,11 +161,11 @@ def main():
     # # #Normalizacion fir del canal
     rch=rch[:28]
     # rch=rch/np.linalg.norm(rch)
-    # fact = [0.25,0,0,0,1]
-    # rch = np.convolve(rch,fact)
+    #fact = [0.25,0,0,0,1]
+    #rch = np.convolve(rch,fact)
     # print "rch", rch
     rch=rch/np.linalg.norm(rch) #lialg.norm ----> Raiz de la suma de los cuadrados de los coeficientes
-
+    rch=rch*np.sqrt(float(os))
     canal=np.convolve(rc,rch)  ## filtro equivalente, resultado de la convolucion de filtro Tx y FIR canal
 
     ###---------------------------------------------------
@@ -183,6 +182,7 @@ def main():
         energia_rch=energia_rch+(rch[q]**2)
     print "Energia rch = ",energia_rch
 
+   
     ##Filtro equivalente de Tx y FIR , canal equivalente
     energia_fir_equiv=0
     for w in range(len(canal)):
@@ -290,8 +290,7 @@ def main():
     #Maximos y minimos
     max_rx = np.zeros(10)
     #Ponderacion 
-    #vect_pond = [0.259,0.259,0.154,0.1503,0.1148,0.1046,0.0928,0.0833,0.0639,0.0537]
-    vect_pond = [0.3018,0.3018,0.1883,0.1582,0.1533,0.1383,0.099,0.1081,0.082,0.066]
+    vect_pond = [0.259,0.259,0.154,0.1503,0.1148,0.1046,0.0928,0.0833,0.0639,0.0537]
 
     #Usados para graficar
     senial_transmitir_I=[]
@@ -307,14 +306,18 @@ def main():
 
     error_tiempo=[] 
 
+    input_equ=[]
+    var_tx=[]
+    var_rx=[]
+    var_ch=[]
     #CURVA BER SIMULADA
-    snr=[100.,100.,16.,14.,12.,10.,8.,6.,4.,2.]
+    snr=[100.]#,20.]#,100.,16.,14.,12.,10.,8.,6.,4.,2.]
     ber=[]
-    snr_iteraciones=[100000,2097153,100000,100000,100000,100000,100000,100000,100000,100000]
+    snr_iteraciones=[100000]#+ 2097153,100000+100000]#,100000,100000,100000,100000,100000,100000,100000]
     for t in range(len(snr_iteraciones)):
         error_final=0
-        noise_vector_I=noise(snr[t],snr_iteraciones[t],1) #genero senial de ruido
-        noise_vector_Q=noise(snr[t],snr_iteraciones[t],1)
+        noise_vector_I=noise(snr[t],snr_iteraciones[t],energia_tx/4) #genero senial de ruido
+        noise_vector_Q=noise(snr[t],snr_iteraciones[t],energia_tx/4)
         print "snr_iter: ",snr_iteraciones[t]
         print "t: ",t
 
@@ -355,11 +358,14 @@ def main():
 
 
             ## Convolucion transmisor, senial transmitida
-            out_tx_I=np.sum((rc*np.sqrt(np.sqrt(os)/np.sqrt(2)))*shift_tx_I)
-            out_tx_Q=np.sum((rc*np.sqrt(np.sqrt(os)/np.sqrt(2)))*shift_tx_Q)
+            out_tx_I=np.sum(rc*shift_tx_I)
+            out_tx_Q=np.sum(rc*shift_tx_Q)
+            
+            if(i%4):
+                var_tx.append(out_tx_I)
 
-            out_tx_I=out_tx_I+noise_vector_I[i]
-            out_tx_Q=out_tx_Q+noise_vector_Q[i]
+            out_tx_I=out_tx_I#+noise_vector_I[i]
+            out_tx_Q=out_tx_Q#+noise_vector_Q[i]
 
 
 
@@ -374,8 +380,10 @@ def main():
 
             out_ch_I=np.sum(mem_canal_I*(rch)) #salida Tx pasa por canal
             out_ch_Q=np.sum(mem_canal_Q*(rch))
-    
 
+            if(i%4):
+                var_ch.append(out_ch_I)
+            
             shift_rx_I = ShiftReg(shift_rx_I)
             shift_rx_Q = ShiftReg(shift_rx_Q)
 
@@ -384,18 +392,25 @@ def main():
 
 
             ##Convolucion receptor, senial recibida
-            rx_I=np.sum((rc*np.sqrt(np.sqrt(os)/np.sqrt(2)))*shift_rx_I)
-            rx_Q=np.sum((rc*np.sqrt(np.sqrt(os)/np.sqrt(2)))*shift_rx_Q)
+            rx_I=np.sum(rc*shift_rx_I)
+            rx_Q=np.sum(rc*shift_rx_Q)
             
+            if(i%4):
+                var_rx.append(rx_I)
 
-            if(max_rx[t] < abs(rx_I)):
-                max_rx[t] = abs(rx_I)
+            rx_I=rx_I*(1/1.7)
+            rx_Q=rx_Q*(1/1.7)
 
-            rx_I = rx_I *vect_pond[t]
-            rx_Q = rx_Q *vect_pond[t]
+            # if(i%4 and t==0):
+            #     input_equ.append(abs(rx_I))
+            # rx_I = rx_I *vect_pond[t]
+            # rx_Q = rx_Q *vect_pond[t]
 
             # rx_I=rx_I*pond
             # rx_Q=rx_Q*pond
+
+            # if(max_rx[t] < abs(rx_I)):
+            #     max_rx[t] = abs(rx_I)
 
             # print "Salida Rx: ",rx_I
 
@@ -439,7 +454,8 @@ def main():
 
 
                  # if(graficar==1):
-                coeficientes.append(coef_fir_adap_I.copy())
+                if(i%4==0): 
+                    coeficientes.append(coef_fir_adap_I.copy())
 
                  #     error_tiempo.append(error_adap_I)
 
@@ -460,8 +476,8 @@ def main():
 
             # phase_I[0]=ak_I
             # phase_Q[0]=ak_Q
-            if(t>=1):
-                ##Ber
+            ##Ber
+            if(t>0):
                 if((value==0) and i!=0):
                     recib_berI = ShiftReg(recib_berI)
                     recib_berQ = ShiftReg(recib_berQ)
@@ -514,10 +530,23 @@ def main():
                             ber.append(float(error_final)/(((snr_iteraciones[t]/os)*2)))
                             print ber
 
-
     
-
-    print "Vector de Maximos", max_rx
+    print "VAR_TX", np.var(var_tx)
+    print "VAR_RX", np.var(var_rx)
+    print "VAR_CH", np.var(var_ch)
+    
+        # print "SNR = ", snr[t], " Maximo = ", max_rx[t]
+        # print "SNR = %d - Maximo = %d" %(snr[t],max_rx[t])
+    # suma=0
+    # for w in range (len(input_equ)):
+    #     suma=suma + input_equ[w]
+    
+    # plt.figure()
+    # plt.title("Entrada Ecualizador")
+    # plt.plot(input_equ,".")
+    # print "Cantidad de muestras para la media ", len(input_equ) 
+    # print "MEDIA:", suma/len(input_equ)
+    # print "Vector de Maximos", max_rx
     print "BER: ", ber
 
     #print error_minimo
