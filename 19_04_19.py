@@ -1,9 +1,11 @@
 import numpy as np
+import matplotlib.pyplot as plt
 from tool.r_cosine import *
 from tool.DSPtools import *
 from tool._fixedInt import *
 from scipy.special import erfc
-import matplotlib.pyplot as plt
+from commpy.filters import rrcosfilter
+from commpy.filters import rcosfilter
 
 
 
@@ -50,7 +52,8 @@ def graf_respImpulso(rc,tipo):
     titulo = "Respuesta al impulso " + tipo
     plt.figure()
     plt.title(titulo)
-    plt.stem(rc,'k-',linewidth=2.0,label=r'$\beta=0.5$')
+    plt.stem(rc,'k-',linewidth=2.0)
+    plt.plot(rc,'k-',linewidth=2.0)
     plt.legend()
     plt.grid(True)
     plt.xlim(0,len(rc)-1)
@@ -97,7 +100,7 @@ def graf_Convolucion(senial,tipo):
     plt.figure()
     plt.title(titulo)
     plt.plot(senial,'r-',linewidth=2.0)
-    plt.xlim(1000,1250)
+    #plt.xlim(1000,1250)
     plt.grid(True)
     plt.legend()
     plt.xlabel('Muestras')
@@ -149,14 +152,16 @@ def main():
 
     ## Filtro Tx y Rx
     #Filtro Root Raised Cosine
-    (t,rc)=rrcosine(beta, T, os, Nbauds)
+    #rc=rrcosfilter(int(Nbauds*os),beta,T,1./Ts)[1]
     #Normalizacion
+    (t,rc)=rrcosine(beta, T, os, Nbauds)
     rc=rc[:24]
-    rc=rc/np.linalg.norm(rc) #lialg.norm ----> Raiz de la suma de los cuadrados de los coeficientes
-    rc=rc*np.sqrt(float(os))
+    #rc=rc/np.linalg.norm(rc) #lialg.norm ----> Raiz de la suma de los cuadrados de los coeficientes
+    rc=rc/np.sqrt(float(os))
     
     # ### FIR para Canal
     # #Filtro Root Raised Cosine 
+    #rch=rcosfilter(int(Nbauds_ch*os),beta,T_ch,1./Ts_ch)[1]
     (t,rch)=rcosine(beta, T_ch, os_ch, Nbauds_ch,0)
     # # #Normalizacion fir del canal
     rch=rch[:28]
@@ -164,10 +169,12 @@ def main():
     #fact = [0.25,0,0,0,1]
     #rch = np.convolve(rch,fact)
     # print "rch", rch
-    rch=rch/np.linalg.norm(rch) #lialg.norm ----> Raiz de la suma de los cuadrados de los coeficientes
-    rch=rch*np.sqrt(float(os))
-    canal=np.convolve(rc,rch)  ## filtro equivalente, resultado de la convolucion de filtro Tx y FIR canal
+    #rch=rch/np.linalg.norm(rch) #lialg.norm ----> Raiz de la suma de los cuadrados de los coeficientes
+    rch=rch/np.sqrt(float(os))
+    canal=np.convolve(rc,rc)  ## filtro equivalente, resultado de la convolucion de filtro Tx y FIR canal
 
+
+    
     ###---------------------------------------------------
     ####Calculos de energia de filtros
     #Tx
@@ -192,7 +199,16 @@ def main():
 
     ###---------------------------------------------------
     #Grafica de respuesta al impulso del filtro
-    # graf_respImpulso(rc,"Filtro Transmisor")
+    graf_respImpulso(rc,"Filtro Transmisor Tx")
+    graf_respImpulso(rch,"Filtro Canal")
+    graf_respImpulso(canal,"Rc Rch")
+    
+    # plt.show(block=False)
+    # raw_input('Press Enter to Continue')
+    # plt.close()
+
+
+    # exit()
 
     #Respuesta en frecuencia
     # [H0,A0,F0]=resp_freq(rc, Ts, Nfreqs)
@@ -401,6 +417,8 @@ def main():
             rx_I=rx_I*(1/1.7)
             rx_Q=rx_Q*(1/1.7)
 
+        
+
             # if(i%4 and t==0):
             #     input_equ.append(abs(rx_I))
             # rx_I = rx_I *vect_pond[t]
@@ -563,7 +581,7 @@ def main():
     #eyediagram(senial_transmitir_Q[100:len(senial_transmitir_Q)-100],os,0,Nbauds)
     
     ##Convolucion receptor, senial recibida
-    #graf_Convolucion(senial_recibida_I,"recibida")
+    graf_Convolucion(var_rx,"recibida")
 
     ##Grafica curvas Ber-teorica y simulada
     #graf_BER(snr,ber)
