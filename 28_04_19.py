@@ -7,6 +7,8 @@ from scipy.special import erfc
 from commpy.filters import rrcosfilter
 from commpy.filters import rcosfilter
 
+
+
 #----------------------------FUNCIONES---------------------------#
 
 # ####
@@ -18,6 +20,7 @@ def noise(SNR_a, N,E):
     No = 1.0/SNR_veces #Potencia de ruido
     sigma = np.sqrt(No*E)
     media = 0
+    #print "SIGMA",sigma
     # noise_vect = np.random.normal(media,sigma,N)
     noise_vect=(sigma*(np.random.randn(N)))+media
     return noise_vect
@@ -61,7 +64,7 @@ def graf_respImpulso(rc,tipo):
     titulo = "Respuesta al impulso " + tipo
     plt.figure()
     plt.title(titulo)
-    #plt.stem(rc,'k-',linewidth=2.0)
+    plt.stem(rc,'k-',linewidth=2.0)
     plt.plot(rc,'k-',linewidth=2.0)
     plt.legend()
     plt.grid(True)
@@ -163,45 +166,41 @@ def main():
     #Filtro Root Raised Cosine
     rc=rrcosfilter(int(Nbauds*os),beta,T,1./Ts)[1]
     #Normalizacion
+    #(t,rc)=rrcosine(beta, T, os, Nbauds)
     rc=rc[:24]
     #rc=rc/np.linalg.norm(rc) #lialg.norm ----> Raiz de la suma de los cuadrados de los coeficientes
     rc=rc/np.sqrt(float(os))
-    #print rc
-    rc_fp= VectorCuantizacion(8,7,rc,'trunc')
-    
-    #print "\n", rc_fp
-
+    rc_fp = VectorCuantizacion(30,27,rc,'trunc')
     
     # ### FIR para Canal
     # #Filtro Root Raised Cosine 
-    # rch=rcosfilter(int(Nbauds_ch*os),beta,T_ch,1./Ts_ch)[1]
+    #rch=rcosfilter(int(Nbauds_ch*os),beta,T_ch,1./Ts_ch)[1]
+    #(t,rch)=rcosine(beta, T_ch, os_ch, Nbauds_ch,0)
     # # #Normalizacion fir del canal
     #rch=rch[:28]
-    # rch=rch/np.linalg.norm(rch)
+    
+
+    rch=np.zeros(28)
+    rch[13]=1
     #rch=rch/np.linalg.norm(rch) #lialg.norm ----> Raiz de la suma de los cuadrados de los coeficientes
     #rch=rch/np.sqrt(float(os))
-    rch= np.zeros(28)
-    rch[13]=1
-    rch=rch/np.sqrt(float(1))
-    rch_fp= VectorCuantizacion(8,7,rch,'trunc')
-
-    canal=np.convolve(rc,rch)
-    canal_fp=np.convolve(rc_fp,rch_fp)  ## filtro equivalente, resultado de la convolucion de filtro Tx y FIR canal
-    canal_fp=VectorCuantizacion(9,8,canal,'trunc')
+    rch_fp = VectorCuantizacion(30,27,rch,'trunc')
+    canal=np.convolve(rc,rch)  ## filtro equivalente, resultado de la convolucion de filtro Tx y FIR canal
+    canal_fp = np.convolve(rc_fp,rch_fp)
     
     ###---------------------------------------------------
     ####Calculos de energia de filtros
     #Tx
     energia_tx=0
     for p in range(len(rc)):
-        energia_tx=energia_tx+(rc_fp[p]**2)
+        energia_tx=energia_tx+(rc[p]**2)
     print "Energia Tx = ", energia_tx
 
-    # ##FIR canal
-    # energia_rch=0
-    # for q in range(len(rch)):
-    #     energia_rch=energia_rch+(rch[q]**2)
-    # print "Energia rch = ",energia_rch
+    ##FIR canal
+    energia_rch=0
+    for q in range(len(rch)):
+        energia_rch=energia_rch+(rch[q]**2)
+    print "Energia rch = ",energia_rch
 
    
     ##Filtro equivalente de Tx y FIR , canal equivalente
@@ -210,11 +209,11 @@ def main():
         energia_fir_equiv=energia_fir_equiv+(canal[w]**2)
 
     print "Energia canal equivalente: ", energia_fir_equiv
-
+    
     ###---------------------------------------------------
     #Grafica de respuesta al impulso del filtro
-    # graf_respImpulso(rc_fp,"Filtro Transmisor Tx")
-    # graf_respImpulso(rch_fp,"Filtro Canal")
+    # graf_respImpulso(rc,"Filtro Transmisor Tx")
+    # graf_respImpulso(rch,"Filtro Canal")
     # graf_respImpulso(canal,"Rc Rch")
     
     plt.figure()
@@ -251,26 +250,18 @@ def main():
     print "Convolucion RC PuntoFlotante \n", canal , "\n \n"
     print "Convolucion RC PunfoFijo \n" , canal_fp, "\n \n"
 
+
+    # plt.show(block=False)
+    # raw_input('Press Enter to Continue')
+    # plt.close()
+    # exit()
     #Respuesta en frecuencia
-    [H0,A0,F0]=resp_freq(rc, Ts, Nfreqs)
-    [H1,A1,F1]=resp_freq(rc_fp, Ts, Nfreqs)
+    # [H0,A0,F0]=resp_freq(rc, Ts, Nfreqs)
 
     #Grafica de respuesta en frecuencia del filtro
-    #graf_respFrecuencia(H0,A0,F0,"Filtro Transmisor")
+    # graf_respFrecuencia(H0,A0,F0,"Filtro Transmisor")
 
-    plt.figure()
-    plt.title('Respuesta en frecuencia convolucion filtro transmisor y receptor')
-    plt.semilogx(F0, 20*np.log10(H0),'r', linewidth=2.0, label=r'$\beta=0.5$')
-    plt.semilogx(F1, 20*np.log10(H1),'b', linewidth=2.0, label=r'$\beta=0.5$')  
-    plt.axvline(x=(1./Ts)/2.,color='k',linewidth=2.0)
-    plt.axvline(x=(1./T)/2.,color='k',linewidth=2.0)
-    plt.axhline(y=20*np.log10(0.5),color='k',linewidth=2.0)
-    plt.legend(loc=3)
-    plt.grid(True)
-    plt.xlim(F0[1],F0[len(F0)-1])
-    plt.xlabel('Frequencia [Hz]')
-    plt.ylabel('Magnitud [dB]')
-
+    # rcoseno=np.convolve(rc,rc)
 
     #Grafica de respuesta al impulso del filtro
     # graf_respImpulso(rcoseno,"convolucion filtro transmisor y receptor")
@@ -298,67 +289,42 @@ def main():
     #Salida del filtro transmisor
     out_tx_I=0
     out_tx_Q=0
-    out_tx_I_fp= DeFixedInt(8,7,'S','trunc') #Punto Fijo
-    out_tx_Q_fp= DeFixedInt(8,7,'S','trunc')
-
+    out_tx_I_fp= DeFixedInt(30,27,'S','trunc') #Punto Fijo
+    out_tx_Q_fp= DeFixedInt(30,27,'S','trunc')
+    
     #Salida de del canal mas el ruido
     out_ch_I=0
     out_ch_Q=0
-
-    out_ch_I_fp= DeFixedInt(9,8) #Punto Fijo
-    out_ch_Q_fp= DeFixedInt(9,8) 
-
-    #Ruido
-    noise_vector_I_fp = DeFixedInt(9,7,'S','trunc')
-    noise_vector_Q_fp = DeFixedInt(9,7,'S','trunc')
-
-    #Canal + Ruido
-    sym_t_I_fp=DeFixedInt(10,7,'S','trunc')
-    sym_t_Q_fp=DeFixedInt(10,7,'S','trunc')
+    out_ch_I_fp= DeFixedInt(30,27) #Punto Fijo
+    out_ch_Q_fp= DeFixedInt(30,27)    
 
     #Salida del filtro receptor
     rx_I = 0
     rx_Q = 0 
-    rx_I_fp = DeFixedInt(11,9,'S','trunc') #Punto Fijo
-    rx_Q_fp = DeFixedInt(11,9,'S','trunc')
+    rx_I_fp = DeFixedInt(30,27,'S','trunc') #Punto Fijo
+    rx_Q_fp = DeFixedInt(30,27,'S','trunc')
 
-    #Cantidad de coeficientes FIR del ecualizador
-    Ntap=31
+    #Valor obtenido del Slicer (detector)
+    ak_I=0
+    ak_Q=0
 
-    #Memoria del filtro FIR Ecualizador
-    mem_fir_adap_I= np.zeros(Ntap) 
-    mem_fir_adap_Q= np.zeros(Ntap)
+    #Salida del FIR del Equalizador
+    y_I=0
+    y_Q=0
+    y_I_fp=DeFixedInt(30,27,'S','trunc')
+    y_Q_fp=DeFixedInt(30,27,'S','trunc')
 
-    #Coeficientes del filtro FIR del ecualizador adaptativo
-    coef_fir_adap_I= np.zeros(Ntap) 
-    coef_fir_adap_Q= np.zeros(Ntap)
-    #Pos 15 = 1 inicializacion
-    coef_fir_adap_I[(Ntap-1)/2]=1 
-    coef_fir_adap_Q[(Ntap-1)/2]=1
-
-    coef_fir_adap_I_fp=DeFixedInt(12,10,'S','trunc')
-    coef_fir_adap_Q_fp=DeFixedInt(12,10,'S','trunc')
+    offset=1
+    
+    phase_I=np.zeros(4)
+    phase_Q=np.zeros(4)
 
     #Error realimentacion Equalizador
     error_adap_I = 0
     error_adap_Q = 0
-    error_adap_I_fp = DeFixedInt(11,9,'S','trunc')
-    error_adap_Q_fp = DeFixedInt(11,9,'S','trunc')
-    
-    #Valor obtenido del Slicer (detector)
-    ak_I=0
-    ak_Q=0
-    #Salida del FIR del Equalizador
-    y_I=0
-    y_Q=0
-    y_I_fp=DeFixedInt(13,10,'S','trunc')
-    y_Q_fp=DeFixedInt(13,10,'S','trunc')
-    
-    promedio_error = []
-    promedio_error2 = []
+    error_adap_I_fp = DeFixedInt(30,27,'S','trunc')
+    error_adap_Q_fp = DeFixedInt(30,27,'S','trunc')
 
-    offset=1
-    
     #Variables utilizadas en la sincronizacion
     error_actual=0
     error_minimo=99999
@@ -376,7 +342,34 @@ def main():
     delta=0.0115
     # delta=0.005
 
-    diezmado=2
+    #Cantidad de coeficientes FIR del ecualizador
+    Ntap=31
+
+    #Memoria del filtro FIR Ecualizador
+    mem_fir_adap_I= np.zeros(Ntap) 
+    mem_fir_adap_Q= np.zeros(Ntap) 
+
+    #Coeficientes del filtro FIR del ecualizador adaptativo
+    coef_fir_adap_I=np.zeros(Ntap) 
+    coef_fir_adap_Q=np.zeros(Ntap) 
+
+    #Pos 15 = 1 inicializacion
+    coef_fir_adap_I[(Ntap-1)/2]=1 
+    coef_fir_adap_Q[(Ntap-1)/2]=1 
+
+
+    coef_fir_adap_I_fp=DeFixedInt(30,27,'S','trunc')
+    coef_fir_adap_Q_fp=DeFixedInt(30,27,'S','trunc')
+
+    noise_vector_I_fp = DeFixedInt(30,27,'S','trunc')
+    noise_vector_Q_fp = DeFixedInt(30,27,'S','trunc')
+
+
+    sym_t_I_fp=DeFixedInt(30,27,'S','trunc')
+    sym_t_Q_fp=DeFixedInt(30,27,'S','trunc')
+
+
+    diezmado=20
 
     end_sync=0 #Bandera indica fin etapa de sincronizacion (1)
 
@@ -386,7 +379,14 @@ def main():
     mem_canal_I=np.zeros(len(rch))
     mem_canal_Q=np.zeros(len(rch))
 
+    #Maximos y minimos
+    max_rx = np.zeros(9)
+    #Ponderacion 
+    #vect_pond=[0.93,0.74,0.70,0.64,0.56,0.52,0.48,0.44,0.4] impulso con /2
+    #vect_pond=[0.93,0.65,0.62,0.53,0.47,0.42,0.38,0.33,0.28] impulso
 
+    #vect_pond=[0.49,0.42,0.40,0.37,0.36,0.33,0.30,0.27,0.25] dividio 2
+    vect_pond=[0.5,0.36,0.33,0.31,0.28,0.25,0.22,0.19,0.17]
     #Usados para graficar
     senial_transmitir_I=[]
     senial_transmitir_Q=[]
@@ -394,58 +394,56 @@ def main():
     senial_recibida_I=[]
     senial_recibida_Q=[]
 
-    media_oRx=[]
-
     senial_recibida_diezmada_I=[]
     senial_recibida_diezmada_Q=[]
-
-    o_ecu=[]
 
     coeficientes=[]
 
     error_tiempo=[] 
 
     input_equ=[]
+    input_equ_m=[]
+    input_equ_2=[]
+    output_tx=[]
     var_tx=[]
     var_rx=[]
     var_ch=[]
-
-    #vect_pond=[0.6407,0.6369,0.6356,0.6331,0.6310,0.6275,0.6238,0.6210,0.6097] #ponderacion segun medias
-    vect_pond=[0.93,0.65,0.62,0.53,0.47,0.42,0.38,0.33,0.28] #ponderacion a ojo segun entrada ecu
-
     #CURVA BER SIMULADA
     snr=[100.,16.,14.,12.,10.,8.,6.,4.,2.]
     ber=[]
-    #snr_iteraciones=[100000+2097153,400000+1000000,100000+1000000,100000+1000000,100000+1000000,100000+1000000,100000+1000000,100000+1000000,100000+1000000]
-    snr_iteraciones=[100000+2097153,40000,40000,40000,40000,40000,40000,40000,40000]
+    #2097153
+    
+    snr_iteraciones=[100000+2097153,100000+1000000,100000+1000000,100000+1000000,100000+1000000,100000+1000000,100000+1000000,100000+1000000,100000+1000000]
+   #snr_iteraciones=[100000,100000,100000,100000,100000,100000,100000,100000,100000]
+
     for t in range(len(snr_iteraciones)):
         error_final=0
-        noise_vector_I=noise(snr[t],snr_iteraciones[t],energia_fir_equiv/1.2)#/(os**2)) #genero senial de ruido
-        noise_vector_Q=noise(snr[t],snr_iteraciones[t],energia_fir_equiv/1.2)#/(os**2))
-  
-        print "snr_iter: ",snr_iteraciones[t]
-        print "t: ",t
+        noise_vector_I=noise(snr[t],snr_iteraciones[t],energia_fir_equiv/1.2) #genero senial de ruido
+        noise_vector_Q=noise(snr[t],snr_iteraciones[t],energia_fir_equiv/1.2)
         
-        print "media: ", np.mean(media_oRx)
-        del media_oRx[:]
+        print "snr_iter: ",snr_iteraciones[t]
+        print "snr",snr[t]
+        
+        # print "media: ", np.mean(media_oRx)
+        # del media_oRx[:]
 
         for i in range(0,snr_iteraciones[t]):
             value=i%os
             if(i==0):
                 sym_t_I=0
                 sym_t_Q=0
-            else:
-                # print "noise: ", noise_vector_I[i]
                 
+                #sym_t_I_fp.value = 0
+                #sym_t_Q_fp.value = 0
+            else:
                 noise_vector_I_fp.value=noise_vector_I[i]
                 noise_vector_Q_fp.value=noise_vector_Q[i]
                 sym_t_I=out_ch_I_fp.fValue +noise_vector_I_fp.fValue
                 sym_t_Q=out_ch_Q_fp.fValue +noise_vector_Q_fp.fValue
-
-                sym_t_I_fp.value=sym_t_I
-                sym_t_Q_fp.value=sym_t_Q
-                # print "noise fp: ", noise_vector_I_fp.fValue
-                # raw_input('Press Enter to Continue')
+                sym_t_I_fp.value = sym_t_I
+                sym_t_Q_fp.value = sym_t_Q
+                # sym_t_I=out_ch_I+noise_vector_I[i]
+                # sym_t_Q=out_ch_Q+noise_vector_Q[i]
 
             shift_tx_I = ShiftReg(shift_tx_I)
             shift_tx_Q = ShiftReg(shift_tx_Q)
@@ -475,25 +473,32 @@ def main():
 
 
             ## Convolucion transmisor, senial transmitida
+            # out_tx_I=np.sum(rc*shift_tx_I)
+            # out_tx_Q=np.sum(rc*shift_tx_Q)
+
             out_tx_I=np.sum(rc_fp*shift_tx_I)
             out_tx_Q=np.sum(rc_fp*shift_tx_Q)
-            
-            # if(i%4):
-            #     var_tx.append(out_tx_I)
 
             out_tx_I_fp.value=out_tx_I
             out_tx_Q_fp.value=out_tx_Q
-
-
-
+            
+            # if(i%4):
+            #     var_tx.append(out_tx_I)
+            
             # ###
             # Canal
             # ###
             mem_canal_I = ShiftReg(mem_canal_I) #corrimiento de memoria del canal
             mem_canal_Q = ShiftReg(mem_canal_Q)
             
+            # mem_canal_I[0]=out_tx_I #agregamos nuevo valor de salida de Tx a la memoria
+            # mem_canal_Q[0]=out_tx_Q
+
             mem_canal_I[0]=out_tx_I_fp.fValue #agregamos nuevo valor de salida de Tx a la memoria
             mem_canal_Q[0]=out_tx_Q_fp.fValue
+
+            # out_ch_I=np.sum(mem_canal_I*(rch)) #salida Tx pasa por canal
+            # out_ch_Q=np.sum(mem_canal_Q*(rch))
 
             out_ch_I=np.sum(mem_canal_I*(rch_fp)) #salida Tx pasa por canal
             out_ch_Q=np.sum(mem_canal_Q*(rch_fp))
@@ -507,37 +512,31 @@ def main():
             shift_rx_I = ShiftReg(shift_rx_I)
             shift_rx_Q = ShiftReg(shift_rx_Q)
 
+            # shift_rx_I[0]=sym_t_I            
+            # shift_rx_Q[0]=sym_t_Q
+
             shift_rx_I[0]=sym_t_I_fp.fValue            
             shift_rx_Q[0]=sym_t_Q_fp.fValue
 
 
             ##Convolucion receptor, senial recibida
-            rx_I=np.sum(rc_fp*shift_rx_I)*vect_pond[t]
-            rx_Q=np.sum(rc_fp*shift_rx_Q)*vect_pond[t]
-            
-            
-            rx_I_fp.value=rx_I
-            rx_Q_fp.value=rx_Q        
+            # rx_I=np.sum(rc*shift_rx_I)
+            # rx_Q=np.sum(rc*shift_rx_Q)
+            rx_I=np.sum(rc_fp*shift_rx_I)
+            rx_Q=np.sum(rc_fp*shift_rx_Q)
 
-            # if(i%4 and t==0):
-            #     input_equ.append(abs(rx_I))
-            # rx_I_fp = rx_I *vect_pond[t]
-            # rx_Q_fp = rx_Q *vect_pond[t]
+            # if(max_rx[t]<rx_I):
+            #     max_rx[t]=rx_I
+           
+            # rx_I = rx_I*vect_pond[t]
+            # rx_Q = rx_Q*vect_pond[t]
+            rx_I_fp.value=rx_I *vect_pond[t]
+            rx_Q_fp.value=rx_Q *vect_pond[t]    
 
-            # rx_I=rx_I*pond
-            # rx_Q=rx_Q*pond
-
-            # if(max_rx[t] < abs(rx_I)):
-            #     max_rx[t] = abs(rx_I)
-
-            # print "Salida Rx: ",rx_I
-            senial_recibida_I.append(rx_I_fp.fValue)
-            media_oRx.append(abs(rx_I_fp.fValue))
-
-            # print "Salida sin ruido:" , rx_I
-            # print "Salida con ruido:" , sym_t_I
-
-            
+            input_equ.append(rx_I)
+            # if(rx_I>1.0):
+            #     input_equ_m.append(abs(rx_I))
+          
             ####
             ###FIR ECUALIZADOR
             #####
@@ -546,8 +545,11 @@ def main():
                 mem_fir_adap_I=ShiftReg(mem_fir_adap_I)
                 mem_fir_adap_Q=ShiftReg(mem_fir_adap_Q)
 
+                # mem_fir_adap_I[0]=rx_I
+                # mem_fir_adap_Q[0]=rx_Q
+
                 mem_fir_adap_I[0]=rx_I_fp.fValue
-                mem_fir_adap_Q[0]=rx_Q_fp.fValue
+                mem_fir_adap_Q[0]=rx_Q_fp.fValue                
 
             if((value==0) and i!=0):
 
@@ -558,51 +560,42 @@ def main():
 
                 y_I_fp.value=y_I
                 y_Q_fp.value=y_Q
-
-                o_ecu.append(y_I_fp.fValue)
-
+          
                 #Slicer
+                # ak_I=(2*(y_I>=0)-1)
+                # ak_Q=(2*(y_Q>=0)-1)
+
                 ak_I=(2*(y_I_fp.fValue>=0)-1)
                 ak_Q=(2*(y_Q_fp.fValue>=0)-1)
 
                 #------------------------------------------Algoritmo de adaptacion
+                # error_adap_I=ak_I-y_I
+                # error_adap_Q=ak_Q-y_Q
+
                 error_adap_I=ak_I-y_I_fp.fValue
                 error_adap_Q=ak_Q-y_Q_fp.fValue
-
-                # promedio_error.append(abs(error_adap_I))
 
                 error_adap_I_fp.value=error_adap_I
                 error_adap_Q_fp.value=error_adap_Q
 
-                # promedio_error2.append(abs(error_adap_I_fp.fValue))
-                                
-                for b in range(0,Ntap):
-                    coef_fir_adap_I[b]=coef_fir_adap_I[b] + delta*error_adap_I_fp.fValue*mem_fir_adap_I[b]
-                    coef_fir_adap_Q[b]=coef_fir_adap_Q[b] + delta*error_adap_Q_fp.fValue*mem_fir_adap_Q[b]
-                
-                # print("COEF I SIN FIX")
-                # print ("sin fix",coef_fir_adap_I)
-                # print("NOSE",coef_fir_adap_I_fp)
-                # for b in range(0,Ntap):
-                #     coef_fir_adap_I_fp.value=coef_fir_adap_I[b]
-                #     coef_fir_adap_I[b]=coef_fir_adap_I_fp.fValue
+                if(i%8==0): 
+                    coeficientes.append(coef_fir_adap_I.copy())
 
-                # print("FIX",coef_fir_adap_I)
+
+                for b in range(0,Ntap):
+                    # coef_fir_adap_I[b]=coef_fir_adap_I[b] + delta*error_adap_I*mem_fir_adap_I[b]
+                    # coef_fir_adap_Q[b]=coef_fir_adap_Q[b] + delta*error_adap_Q*mem_fir_adap_Q[b]
+                    coef_fir_adap_I[b]=coef_fir_adap_I[b] + delta*error_adap_I_fp.fValue*mem_fir_adap_I[b]
+                    coef_fir_adap_Q[b]=coef_fir_adap_Q[b] + delta*error_adap_Q_fp.fValue*mem_fir_adap_Q[b]                    
 
                 for b in range(0,Ntap):
                     coef_fir_adap_I_fp.value=coef_fir_adap_I[b]
                     coef_fir_adap_I[b]=coef_fir_adap_I_fp.fValue
                     coef_fir_adap_Q_fp.value=coef_fir_adap_Q[b]
                     coef_fir_adap_Q[b]=coef_fir_adap_Q_fp.fValue
-                 
-                if(i%8==0): 
-                    coeficientes.append(coef_fir_adap_I.copy())    
-                # # raw_input('Press Enter to Continue')
-                # print("COEF I CON FIX")
-                # for b in range(0,Ntap):
-                #     print (coef_fir_adap_I[b])
-            #Ber
-            if(i>100000):
+
+            ##Ber
+            if(i >100000):
                 if((value==0) and i!=0):
                     recib_berI = ShiftReg(recib_berI)
                     recib_berQ = ShiftReg(recib_berQ)
@@ -629,8 +622,7 @@ def main():
                             else:   #finalizo etapa de sincronizacion
                                 pos_trans=pos_aux
                                 end_sync=1
-                                # print "end_sync",end_sync
-                                #graficar=1
+            
                         if(recib_berI[0]!=trans_berI[pos_trans]):
                             error_actual=error_actual+1
                         if(recib_berQ[0]!=trans_berQ[pos_trans]):
@@ -638,12 +630,6 @@ def main():
 
                     else: #end_sync==1 pos sincronizacion
                         cant_muestras=cant_muestras+1
-                        # print "end_sync"
-                        # if(end_sync==1):
-                            # print "Bit recibido en BER: ", ak_I
-                            # raw_input('Press Enter to Continue')
-                            # plt.close()
-
                         if(recib_berI[0]!=trans_berI[pos_trans]):
                             error_final=error_final+1
                         if(recib_berQ[0]!=trans_berQ[pos_trans]):
@@ -654,25 +640,27 @@ def main():
                             print "error_final", error_final
                             ber.append(float(error_final)/((((snr_iteraciones[t]-100000)/os)*2)))
                             print ber
-
-    
+                            
+    # print "Media Tx",np.mean(output_tx)
+    # print "Media", np.mean(input_equ)    
+    # print "Media", np.mean(input_equ_m) 
     # print "VAR_TX", np.var(var_tx)
     # print "VAR_RX", np.var(var_rx)
     # print "VAR_CH", np.var(var_ch)
-    
-        # print "SNR = ", snr[t], " Maximo = ", max_rx[t]
-        # print "SNR = %d - Maximo = %d" %(snr[t],max_rx[t])
+    # for k in range (0,len(max_rx)):
+    #     print "SNR = ", snr[k], " Maximo = ", max_rx[k]
+  #  print "SNR = %d - Maximo = %d" %(snr[t],max_rx[t])
     # suma=0
     # for w in range (len(input_equ)):
     #     suma=suma + input_equ[w]
     
-    # plt.figure()
-    # plt.title("Entrada Ecualizador")
-    # plt.plot(input_equ,".")
+    plt.figure()
+    plt.title("Entrada Ecualizador")
+    plt.plot(input_equ)
     # print "Cantidad de muestras para la media ", len(input_equ) 
     # print "MEDIA:", suma/len(input_equ)
     # print "Vector de Maximos", max_rx
-    #print "BER: ", ber
+    print "BER: ", ber
 
     #print error_minimo
     #print pos_aux
@@ -693,21 +681,11 @@ def main():
     ##Grafica curvas Ber-teorica y simulada
     #graf_BER(snr,ber)
 
-    print "media: ", np.mean(media_oRx)
-    del media_oRx[:]
-
-    plt.figure()
-    plt.title("Entrada al ecualizador")
-    plt.plot(senial_recibida_I)
-
-    plt.figure()
-    plt.title("Salida Ecualizador")
-    plt.plot(o_ecu)
-
     ##Grafico diagrama ojo receptor
-    #eyediagram(senial_recibida_I[100:len(senial_recibida_I)-100],os,0,Nbauds)
-    #eyediagram(senial_recibida_Q[100:len(senial_recibida_Q)-100],os,0,Nbauds)
-
+ #   eyediagram(senial_recibida_I[100:len(senial_recibida_I)-100],os,0,Nbauds)
+#    eyediagram(senial_recibida_Q[100:len(senial_recibida_Q)-100],os,0,Nbauds)
+    # plt.figure()
+    # plt.plot(senial_recibida_I)
     ##Constelaciones
     # plt.figure()
     # plt.title("Constelaciones")
