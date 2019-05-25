@@ -248,8 +248,8 @@ def main():
     # plt.xlabel('Muestras')
     # plt.ylabel('Magnitud')
 
-    print "Convolucion RC PuntoFlotante \n", canal , "\n \n"
-    print "Convolucion RC PunfoFijo \n" , canal_fp, "\n \n"
+    # print "Convolucion RC PuntoFlotante \n", canal , "\n \n"
+    # print "Convolucion RC PunfoFijo \n" , canal_fp, "\n \n"
 
     #Respuesta en frecuencia
     [H0,A0,F0]=resp_freq(rc, Ts, Nfreqs)
@@ -319,8 +319,8 @@ def main():
     #Salida del filtro receptor
     rx_I = 0
     rx_Q = 0 
-    rx_I_fp = DeFixedInt(12,9,'S','trunc') #Punto Fijo
-    rx_Q_fp = DeFixedInt(12,9,'S','trunc')
+    rx_I_fp = DeFixedInt(13,10,'S','trunc') #Punto Fijo
+    rx_Q_fp = DeFixedInt(13,10,'S','trunc')
 
     #Cantidad de coeficientes FIR del ecualizador
     Ntap=31
@@ -336,14 +336,14 @@ def main():
     coef_fir_adap_I[(Ntap-1)/2]=1 
     coef_fir_adap_Q[(Ntap-1)/2]=1
 
-    coef_fir_adap_I_fp=DeFixedInt(20,17,'S','trunc')
-    coef_fir_adap_Q_fp=DeFixedInt(20,17,'S','trunc')
+    coef_fir_adap_I_fp=DeFixedInt(15,12,'S','trunc')
+    coef_fir_adap_Q_fp=DeFixedInt(15,12,'S','trunc')
 
     #Error realimentacion Equalizador
     error_adap_I = 0
     error_adap_Q = 0
-    error_adap_I_fp = DeFixedInt(12,9,'S','trunc')
-    error_adap_Q_fp = DeFixedInt(12,9,'S','trunc')
+    error_adap_I_fp = DeFixedInt(13,10,'S','trunc')
+    error_adap_Q_fp = DeFixedInt(13,10,'S','trunc')
     
     #Valor obtenido del Slicer (detector)
     ak_I=0
@@ -411,15 +411,16 @@ def main():
     var_ch=[]
 
     #vect_pond=[0.6407,0.6369,0.6356,0.6331,0.6310,0.6275,0.6238,0.6210,0.6097] #ponderacion segun medias
-    vect_pond=[0.93,0.65,0.62,0.53,0.47,0.42,0.38,0.32,0.28] #ponderacion a ojo segun entrada ecu
-    # vect_pond=[0.38,0.28,0.24]
+    #vect_pond=[0.93,0.65,0.62,0.53,0.47,0.42,0.38,0.32,0.28] #ponderacion a ojo segun entrada ecu
+    
+    vect_pond=[0.854,0.736,0.674,0.643,0.616,0.546,0.479,0.428,0.384]
     #CURVA BER SIMULADA
     snr=[100.,16.,14.,12.,10.,8.,6.,4.,2.]
     # snr=[6.,4.,2.]
     ber=[]
     # snr_iteraciones=[40000,40000,40000]
-    snr_iteraciones=[2097153,400000+1000000,100000+1000000,100000+1000000,100000+1000000,100000+1000000,100000+1000000,100000+1000000,100000+1000000]
-    #snr_iteraciones=[100000,100000,100000,100000,100000,100000,100000,100000,100000]
+    #snr_iteraciones=[2097153,400000+1000000,100000+1000000,100000+1000000,100000+1000000,100000+1000000,100000+1000000,100000+1000000,100000+1000000]
+    snr_iteraciones=[100000,100000,100000,100000,100000,100000,100000,100000,100000]
     for t in range(len(snr_iteraciones)):
         error_final=0
         noise_vector_I=noise(snr[t],snr_iteraciones[t],energia_fir_equiv/1.2)#/(os**2)) #genero senial de ruido
