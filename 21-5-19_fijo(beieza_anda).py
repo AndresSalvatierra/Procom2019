@@ -167,23 +167,23 @@ def main():
     #rc=rc/np.linalg.norm(rc) #lialg.norm ----> Raiz de la suma de los cuadrados de los coeficientes
     rc=rc/np.sqrt(float(os))
     #print rc
-    rc_fp= VectorCuantizacion(8,7,rc,'trunc')
+    rc_fp= VectorCuantizacion(9,8,rc,'trunc')
     
     #print "\n", rc_fp
 
     
     # ### FIR para Canal
     # #Filtro Root Raised Cosine 
-    # rch=rcosfilter(int(Nbauds_ch*os),beta,T_ch,1./Ts_ch)[1]
+    rch=rcosfilter(int(Nbauds_ch*os),beta,T_ch,1./Ts_ch)[1]
     # # #Normalizacion fir del canal
     #rch=rch[:28]
-    # rch=rch/np.linalg.norm(rch)
+    rch=rch/np.linalg.norm(rch)
     #rch=rch/np.linalg.norm(rch) #lialg.norm ----> Raiz de la suma de los cuadrados de los coeficientes
-    #rch=rch/np.sqrt(float(os))
-    rch= np.zeros(28)
-    rch[13]=1
-    rch=rch/np.sqrt(float(1))
-    rch_fp= VectorCuantizacion(8,7,rch,'trunc')
+    rch=rch/np.sqrt(float(os))
+    # rch= np.zeros(28)
+    # rch[13]=1
+    # rch=rch/np.sqrt(float(1))
+    rch_fp= VectorCuantizacion(9,8,rch,'trunc')
 
     canal=np.convolve(rc,rch)
     canal_fp=np.convolve(rc_fp,rch_fp)  ## filtro equivalente, resultado de la convolucion de filtro Tx y FIR canal
@@ -298,8 +298,8 @@ def main():
     #Salida del filtro transmisor
     out_tx_I=0
     out_tx_Q=0
-    out_tx_I_fp= DeFixedInt(8,7,'S','trunc') #Punto Fijo
-    out_tx_Q_fp= DeFixedInt(8,7,'S','trunc')
+    out_tx_I_fp= DeFixedInt(9,7,'S','trunc') #Punto Fijo
+    out_tx_Q_fp= DeFixedInt(9,7,'S','trunc')
 
     #Salida de del canal mas el ruido
     out_ch_I=0
@@ -336,8 +336,8 @@ def main():
     coef_fir_adap_I[(Ntap-1)/2]=1 
     coef_fir_adap_Q[(Ntap-1)/2]=1
 
-    coef_fir_adap_I_fp=DeFixedInt(12,10,'S','trunc')
-    coef_fir_adap_Q_fp=DeFixedInt(12,10,'S','trunc')
+    coef_fir_adap_I_fp=DeFixedInt(20,17,'S','trunc')
+    coef_fir_adap_Q_fp=DeFixedInt(20,17,'S','trunc')
 
     #Error realimentacion Equalizador
     error_adap_I = 0
@@ -418,8 +418,8 @@ def main():
     # snr=[6.,4.,2.]
     ber=[]
     # snr_iteraciones=[40000,40000,40000]
-    #snr_iteraciones=[100000+2097153,400000+1000000,100000+1000000,100000+1000000,100000+1000000,100000+1000000,100000+1000000,100000+1000000,100000+1000000]
-    snr_iteraciones=[100000,100000,100000,100000,100000,100000,100000,100000,100000]
+    snr_iteraciones=[2097153,400000+1000000,100000+1000000,100000+1000000,100000+1000000,100000+1000000,100000+1000000,100000+1000000,100000+1000000]
+    #snr_iteraciones=[100000,100000,100000,100000,100000,100000,100000,100000,100000]
     for t in range(len(snr_iteraciones)):
         error_final=0
         noise_vector_I=noise(snr[t],snr_iteraciones[t],energia_fir_equiv/1.2)#/(os**2)) #genero senial de ruido
@@ -667,7 +667,7 @@ def main():
     # suma=0
     # for w in range (len(input_equ)):
     #     suma=suma + input_equ[w]
-    
+    print "BER", ber
     # plt.figure()
     # plt.title("Entrada Ecualizador")
     # plt.plot(input_equ,".")
